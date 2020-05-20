@@ -1,0 +1,34 @@
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+f, axes = plt.subplots(figsize=(18, 8))
+sns.countplot(data["tenure"],hue = data["Churn"]);
+f, axes = plt.subplots(nrows=6, ncols=3, figsize=(10, 3))
+sns.countplot(data["Churn"],hue = data["PaperlessBilling"],ax = axes[4,2])
+sns.countplot(data["Churn"],hue = data["PaymentMethod"],ax = axes[5,0])
+sns.countplot(data["Churn"],hue = data["Tenure_Group"],ax = axes[5,1])
+sns.countplot(data["Tenure_Group"],ax = axes[5,2]);
+plt.setp(axes, yticks=[])
+plt.tight_layout()
+sns.lmplot(x = "MonthlyCharges", y= "TotalCharges", data=data,fit_reg = False,hue = "Tenure_Group",aspect=12/9);
+#scatter and regression plot
+f, axes = plt.subplots( ncols=2, figsize=(20, 6))
+sns.barplot(x='Tenure_Group',y='MonthlyCharges',data=data,hue = "Churn",ax = axes[0])
+sns.barplot(x='Tenure_Group',y='TotalCharges',data=data,hue = "Churn",ax = axes[1])
+data.info()
+#nunique() return Series with number of distinct observations
+cat_cols = [x for x in data.columns if data[x].nunique()<6 and x!="Churn"]
+num_cols = [x for x in data.columns if data[x].nunique()>6 and x!="customerID"]
+id_customer = data["customerID"]
+label = data["Churn"]
+label = label.apply(lambda x: 1 if x == "Yes" else 0)
+from sklearn.preprocessing import MinMaxScaler   #0-20  (15-0)/(20-0)=15/20=3/4=0.75
+features_log_transformed = pd.DataFrame(data = data[num_cols])
+features_log_transformed[num_cols] = data[num_cols].apply(lambda x: np.log(x + 1))
+scaler = MinMaxScaler()
+features_log_minmax_transform = pd.DataFrame(data = features_log_transformed)
+features_log_minmax_transform[num_cols] = scaler.fit_transform(features_log_transformed[num_cols])
+features_log_minmax_transform.drop("tenure",inplace = True, axis = 1)
+data.drop(["MonthlyCharges","TotalCharges","tenure"],axis = 1, inplace = True)
+data = pd.concat([data, features_log_minmax_transform], axis=1)
